@@ -21,22 +21,22 @@ argparser.add_argument(
 def _main_(args):
     config_path = args.conf
 
-    with open(config_path) as config_buffer:    
+    with open(config_path) as config_buffer:
         config = json.loads(config_buffer.read())
 
     ###############################
-    #   Parse the annotations 
+    #   Parse the annotations
     ###############################
 
     # parse annotations of the training set
-    train_imgs, train_labels = parse_annotation(config['train']['train_annot_folder'], 
-                                                config['train']['train_image_folder'], 
+    train_imgs, train_labels = parse_annotation(config['train']['train_annot_folder'],
+                                                config['train']['train_image_folder'],
                                                 config['model']['labels'])
 
     # parse annotations of the validation set, if any, otherwise split the training set
     if os.path.exists(config['valid']['valid_annot_folder']):
-        valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'], 
-                                                    config['valid']['valid_image_folder'], 
+        valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'],
+                                                    config['valid']['valid_image_folder'],
                                                     config['model']['labels'])
     else:
         train_valid_split = int(0.8*len(train_imgs))
@@ -50,7 +50,7 @@ def _main_(args):
 
         print('Seen labels:\t', train_labels)
         print('Given labels:\t', config['model']['labels'])
-        print('Overlap labels:\t', overlap_labels)           
+        print('Overlap labels:\t', overlap_labels)
 
         if len(overlap_labels) < len(config['model']['labels']):
             print('Some labels have no annotations! Please revise the list of labels in the config.json file!')
@@ -58,27 +58,27 @@ def _main_(args):
     else:
         print('No labels are provided. Train on all seen labels.')
         config['model']['labels'] = train_labels.keys()
-        
+
     ###############################
-    #   Construct the model 
+    #   Construct the model
     ###############################
 
     yolo = YOLO(backend             = config['model']['backend'],
-                input_size          = config['model']['input_size'], 
-                labels              = config['model']['labels'], 
+                input_size          = config['model']['input_size'],
+                labels              = config['model']['labels'],
                 max_box_per_image   = config['model']['max_box_per_image'],
                 anchors             = config['model']['anchors'])
 
     ###############################
-    #   Load the pretrained weights (if any) 
-    ###############################    
+    #   Load the pretrained weights (if any)
+    ###############################
 
     if os.path.exists(config['train']['pretrained_weights']):
         print("Loading pre-trained weights in", config['train']['pretrained_weights'])
         yolo.load_weights(config['train']['pretrained_weights'])
 
     ###############################
-    #   Start the training process 
+    #   Start the training process
     ###############################
 
     yolo.train(train_imgs         = train_imgs,
@@ -86,9 +86,10 @@ def _main_(args):
                train_times        = config['train']['train_times'],
                valid_times        = config['valid']['valid_times'],
                nb_epochs          = config['train']['nb_epochs'], 
-               learning_rate      = config['train']['learning_rate'], 
+               learning_rate      = config['train']['learning_rate'],
                batch_size         = config['train']['batch_size'],
                warmup_epochs      = config['train']['warmup_epochs'],
+               transfer_learning  = config['train'].get('transfer_learning'),
                object_scale       = config['train']['object_scale'],
                no_object_scale    = config['train']['no_object_scale'],
                coord_scale        = config['train']['coord_scale'],
